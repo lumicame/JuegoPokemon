@@ -1,6 +1,6 @@
 # JuegoPokemon
 Nombre app
-BatallaPokemon
+Batalla Pokemon
   
 Disfruta batallando con pokemon, conoce este mundo fantástico.
 Que esperas te aseguro que no te arrepentiras.  
