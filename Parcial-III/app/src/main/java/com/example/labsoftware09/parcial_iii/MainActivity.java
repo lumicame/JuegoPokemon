@@ -1,13 +1,18 @@
 package com.example.labsoftware09.parcial_iii;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -23,12 +28,16 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
+    TextView daño1,daño2;
     TextView pokemon1_nombre;
     TextView pokemon2_nombre;
     TextView vida1;
     TextView vida2;
     ImageView pokemon1_imagen;
     ImageView pokemon2_imagen;
+    Button ataque;
+    int jugador1_vida=100;
+    int maquina_vida=100;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,22 +45,90 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        ataque= (Button) findViewById(R.id.atacar);
         pokemon1_nombre= (TextView) findViewById(R.id.pokemon1_nombre);
         pokemon2_nombre= (TextView) findViewById(R.id.pokemon2_nombre);
         pokemon1_imagen= (ImageView) findViewById(R.id.pokemon1);
         pokemon2_imagen= (ImageView) findViewById(R.id.pokemon2);
         vida1= (TextView) findViewById(R.id.pokemon1_vida);
         vida2= (TextView) findViewById(R.id.pokemon2_vida);
+        daño1= (TextView) findViewById(R.id.textView_daño1);
+        daño2= (TextView) findViewById(R.id.textView_daño2);
         vida1.setText("100");
         vida2.setText("100");
-        Random random=new Random();
-        int id1= (int) (Math.random()*500);
-        int id2=(int) (Math.random()*500);
-        traernombre(id1,pokemon1_nombre);
-        traernombre(id2,pokemon2_nombre);
+        ataque.setEnabled(false);
+        ataque.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ataque();
+            }
+        });
+        int id1= (int) (Math.random()*721);
+        int id2=(int) (Math.random()*721);
+        traernombre(id1,pokemon1_nombre,pokemon1_imagen,false);
+        traernombre(id2,pokemon2_nombre,pokemon2_imagen,true);
 
-        cargarimagen(id1,pokemon1_imagen);
-        cargarimagen2(id2,pokemon2_imagen);
+
+
+    }
+    public AlphaAnimation FadeIn(){
+        AlphaAnimation alphaAnimation=new AlphaAnimation(0.0f,1.0f);
+        alphaAnimation.setDuration(1500);
+        alphaAnimation.setFillAfter(true);
+    return alphaAnimation;
+    }
+
+    public AlphaAnimation FadeOut(){
+        AlphaAnimation alphaAnimation=new AlphaAnimation(1.0f,0.0f);
+        alphaAnimation.setDuration(1500);
+        alphaAnimation.setFillAfter(true);
+        return alphaAnimation;
+    }
+    public boolean verificar(int vida){
+        if (vida<=0){
+            return true;
+        }
+        else return false;
+    }
+    public void ataque(){
+        ataque.setEnabled(false);
+        int ataque_jugador= (int) (Math.random()*50);
+        final int ataque_maquina= (int) (Math.random()*50);
+        //
+        daño1.setText("-"+ataque_jugador+"");
+        daño1.setAnimation(FadeIn());
+        daño1.setAnimation(FadeOut());
+        maquina_vida=(maquina_vida-ataque_jugador);
+        if (verificar(maquina_vida)==true){
+            vida1.setText("0");
+            ataque.setEnabled(false);
+            Toast.makeText(MainActivity.this, "GANASTES", Toast.LENGTH_SHORT).show();
+
+        }else {
+            vida1.setText(""+maquina_vida);
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    jugador1_vida=(jugador1_vida-ataque_maquina);
+                    daño2.setText("-"+ataque_maquina+"");
+                    daño2.setAnimation(FadeIn());
+                    daño2.setAnimation(FadeOut());
+                    if (verificar(jugador1_vida)==true){
+                        vida2.setText("0");
+                        ataque.setEnabled(false);
+                        Toast.makeText(MainActivity.this, "PERDISTES", Toast.LENGTH_SHORT).show();
+
+                    }else {
+                        vida2.setText(""+jugador1_vida);
+                        ataque.setEnabled(true);
+                    }
+
+                }
+            }, 1500);
+
+
+        }
+
 
 
     }
@@ -65,76 +142,11 @@ public class MainActivity extends AppCompatActivity {
         mImageLoader = MySingleton.getInstance(this).getImageLoader();
         mImageLoader.get(url, ImageLoader.getImageListener(imageView,
                 R.mipmap.ic_launcher, R.mipmap.ic_launcher));
+        ataque.setEnabled(true);
 
     }
 
-    public void cargarimagen(int id, final ImageView imageView){
-        MySingleton.getInstance(this.getApplicationContext()).getRequestQueue();
-        String url ="http://pokeapi.co/api/v2/pokemon-form/"+id+"/";
-
-// Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        Log.i("response",response);
-                        try{
-                            JSONObject jsonObject=new JSONObject(response);
-                            JSONObject jsonObject1=new JSONObject(jsonObject.getString("sprites"));
-                            String url=jsonObject1.getString("front_default").toString();
-                            descargarimagen(imageView,url);
-                                Log.i("imagen: ", jsonObject1.getString("front_default").toString());
-
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.i("","That didn't work!");
-            }
-        });
-// Add the request to the RequestQueue.
-        MySingleton.getInstance(this).addToRequestQueue(stringRequest);
-
-    }
-    public void cargarimagen2(int id, final ImageView imageView){
-        MySingleton.getInstance(this.getApplicationContext()).getRequestQueue();
-        String url ="http://pokeapi.co/api/v2/pokemon-form/"+id+"/";
-
-// Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        Log.i("response",response);
-                        try{
-                            JSONObject jsonObject=new JSONObject(response);
-                            JSONObject jsonObject1=new JSONObject(jsonObject.getString("sprites"));
-                            String url=jsonObject1.getString("back_default").toString();
-                            descargarimagen(imageView,url);
-                            Log.i("imagen: ", jsonObject1.getString("back_default").toString());
-
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.i("","That didn't work!");
-            }
-        });
-// Add the request to the RequestQueue.
-        MySingleton.getInstance(this).addToRequestQueue(stringRequest);
-    }
-
-    public void traernombre(int id, final TextView t){
+    public void traernombre(int id, final TextView t, final ImageView imageView, final boolean jugador){
 
         MySingleton.getInstance(this.getApplicationContext()).
                 getRequestQueue();
@@ -151,13 +163,21 @@ public class MainActivity extends AppCompatActivity {
                         Log.i("response",response);
                         try{
                             JSONObject jsonObject=new JSONObject(response);
-                            Log.i("nombre",jsonObject.getString("name"));
                             t.setText( jsonObject.getString("name"));
-                            JSONArray jsonArray=jsonObject.getJSONArray("abilities");
-                            for (int i=0;i<jsonArray.length();i++) {
-
-                                Log.i("abilities: ", jsonArray.getJSONObject(i).toString());
+                            vida1.setText(""+maquina_vida);
+                            vida2.setText(""+jugador1_vida);
+                            JSONObject jsonObject1=new JSONObject(jsonObject.getString("sprites"));
+                            Log.i("",jsonObject1.getString("back_default").toString());
+                            String url;
+                            if(jugador==true){
+                                url=jsonObject1.getString("back_default").toString();
+                                descargarimagen(imageView,url);
+                            }else {
+                                url=jsonObject1.getString("front_default").toString();
+                                descargarimagen(imageView,url);
                             }
+
+
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -193,6 +213,13 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            maquina_vida=100;
+            jugador1_vida=100;
+            int id1= (int) (Math.random()*721);
+            int id2=(int) (Math.random()*721);
+            traernombre(id1,pokemon1_nombre,pokemon1_imagen,false);
+            traernombre(id2,pokemon2_nombre,pokemon2_imagen,true);
+
             return true;
         }
 
